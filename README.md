@@ -1,8 +1,23 @@
-# wireguard-update-ips
-easy way to update wireguard ips
+# WireGuard Update IPs
+
+An easy way to update WireGuard IPs.
+
+---
+
+## 🚀 Setup
+
+1. Add the source to your `.bashrc`:
+   ```bash
+   source ~/wireguard-update-ips/update-wireguard
+2. Reload ./bashrc
+   ```bash
+   source ~/.bashrc
+
+⚡ Usage
+
+Run the command:
+```bash
+update-wireguard {addresses to dig and configure in the WireGuard config}
 
 
-steps 
-1. add source to .bashrc (source ~/wireguard-update-ips/update-wireguard)
-2. `source ~/.bashrc`
-3. use commad, `update-wireguard {addresses to dig and configure in the wireguard config}`
+
