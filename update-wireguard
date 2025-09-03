@@ -1,0 +1,53 @@
+update-wireguard() {
+    CONF_FILE="$HOME/Downloads/stupendous-exam.conf"
+    TMP_FILE="/tmp/stupendous-exam.conf"
+    NM_NAME="stupendous-exam"
+
+    if [ $# -eq 0 ]; then
+        echo "Usage: update-wireguard url1 url2 ..."
+        return 1
+    fi
+
+    NEW_IPS=()
+    for url in "$@"; do
+        # Collect both IPv4 and IPv6, strip whitespace
+        ips=$(dig +short A "$url" | awk 'NF')  
+        for ip in $ips; do
+            NEW_IPS+=("${ip}/32")
+        done
+    done
+
+    if [ ${#NEW_IPS[@]} -eq 0 ]; then
+        echo "❌ No IPs resolved. Exiting."
+        return 1
+    fi
+
+    echo "Resolved IPs: ${NEW_IPS[*]}"
+
+    cp "$CONF_FILE" "$TMP_FILE"
+
+    OLD_ALLOWED=$(grep "^AllowedIPs" "$CONF_FILE" | cut -d= -f2- | tr -d ' ')
+    UPDATED_ALLOWED=$(echo "$OLD_ALLOWED,${NEW_IPS[*]}" \
+        | tr ' ' ',' \
+        | tr ',' '\n' \
+        | sort -u \
+        | tr '\n' ',' \
+        | sed 's/,$//')
+
+    sed -i "s|^AllowedIPs.*|AllowedIPs = ${UPDATED_ALLOWED}|" "$TMP_FILE"
+
+    echo "Updating WireGuard config..."
+
+    for uuid in $(nmcli -t -f UUID,NAME connection show | grep "$NM_NAME" | cut -d: -f1); do
+        nmcli connection delete uuid "$uuid" 2>/dev/null
+    done
+
+    if nmcli connection import type wireguard file "$TMP_FILE"; then
+        echo "✅ WireGuard config updated successfully."
+        cp "$TMP_FILE" "$CONF_FILE"
+    else
+        echo "❌ Failed to import WireGuard config."
+        echo "⚠️ Check formatting in $TMP_FILE."
+        return 1
+    fi
+}
